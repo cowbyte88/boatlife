@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Condições do Mar</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mar PB-Pompano">
+<meta name="theme-color" content="#062033">
+<style>
+  :root{
+    --bg1:#062033;
+    --bg2:#0a3a54;
+    --card:#0e3550;
+    --card-border:rgba(255,255,255,0.08);
+    --text:#eaf4fb;
+    --text-dim:#9fc2d6;
+    --accent:#38c6d9;
+    --good:#3ddc84;
+    --warn:#ffc84a;
+    --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:linear-gradient(160deg,var(--bg1) 0%,var(--bg2) 55%,#0c4a63 100%);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+    min-height:100vh;
+    padding:env(safe-area-inset-top) 18px calc(env(safe-area-inset-bottom) + 24px) 18px;
+    padding-top:calc(env(safe-area-inset-top) + 22px);
+  }
+  header{
+    text-align:center;
+    margin-bottom:18px;
+  }
+  header h1{
+    font-size:22px;
+    margin:0 0 4px 0;
+    letter-spacing:0.3px;
+  }
+  header p{
+    margin:0;
+    font-size:13px;
+    color:var(--text-dim);
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:18px;
+    padding:18px;
+    margin-bottom:16px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.25);
+  }
+  .status-line{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .status-line .label{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--text-dim);
+  }
+  #refreshBtn{
+    background:rgba(255,255,255,0.08);
+    border:1px solid var(--card-border);
+    color:var(--text);
+    border-radius:10px;
+    padding:6px 12px;
+    font-size:13px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  #refreshBtn:active{ transform:scale(0.96); }
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-bottom:14px;
+  }
+  .metric{
+    background:rgba(255,255,255,0.04);
+    border-radius:12px;
+    padding:12px;
+  }
+  .metric .m-label{
+    font-size:11px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    margin-bottom:4px;
+  }
+  .metric .m-value{
+    font-size:22px;
+    font-weight:600;
+  }
+  .metric .m-sub{
+    font-size:12px;
+    color:var(--text-dim);
+    margin-top:2px;
+  }
+  .verdicts{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .verdict{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:rgba(255,255,255,0.04);
+    border-radius:12px;
+    padding:12px 14px;
+  }
+  .verdict .icon{ font-size:24px; }
+  .verdict .txt .t-title{ font-weight:600; font-size:14px; }
+  .verdict .txt .t-sub{ font-size:12px; color:var(--text-dim); margin-top:1px; }
+  .pill-good{ color:var(--good); }
+  .pill-warn{ color:var(--warn); }
+  .pill-bad{ color:var(--bad); }
+  .section-title{
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--text-dim);
+    margin:4px 0 10px 4px;
+  }
+  .cam-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .cam-link{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:rgba(255,255,255,0.05);
+    border:1px solid var(--card-border);
+    border-radius:14px;
+    padding:14px 16px;
+    text-decoration:none;
+    color:var(--text);
+  }
+  .cam-link:active{ background:rgba(255,255,255,0.1); }
+  .cam-link .cam-name{ font-weight:600; font-size:15px; }
+  .cam-link .cam-desc{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .cam-link .chev{ color:var(--accent); font-size:18px; }
+  .loading{ text-align:center; color:var(--text-dim); padding:20px 0; font-size:14px; }
+  .error-box{
+    background:rgba(255,107,107,0.1);
+    border:1px solid rgba(255,107,107,0.3);
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:13px;
+    color:#ffb3b3;
+  }
+  footer{
+    text-align:center;
+    font-size:11px;
+    color:var(--text-dim);
+    margin-top:6px;
+    line-height:1.5;
+    padding:0 8px;
+  }
+  footer a{ color:var(--accent); }
+  .spin{
+    display:inline-block;
+    width:12px;height:12px;
+    border:2px solid rgba(255,255,255,0.3);
+    border-top-color:var(--accent);
+    border-radius:50%;
+    animation:sp 0.8s linear infinite;
+  }
+  @keyframes sp{ to{ transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌊 Condições do Mar</h1>
+  <p>Palm Beach → Pompano Beach, FL</p>
+</header>
+
+<div class="card">
+  <div class="status-line">
+    <span class="label" id="updatedLabel">carregando…</span>
+    <button id="refreshBtn" onclick="loadConditions()">↻ Atualizar</button>
+  </div>
+
+  <div id="dataArea">
+    <div class="loading"><span class="spin"></span>&nbsp; Buscando condições…</div>
+  </div>
+</div>
+
+<div class="section-title">📷 Câmeras ao vivo (Palm Beach County)</div>
+<div class="card">
+  <div class="cam-list">
+    <a class="cam-link" href="https://video-monitoring.com/beachcams/lakeworthinlet/" target="_blank" rel="noopener">
+      <div>
+        <div class="cam-name">Lake Worth Inlet</div>
+        <div class="cam-desc">Norte da área · próximo a Palm Beach</div>
+      </div>
+      <div class="chev">›</div>
+    </a>
+    <a class="cam-link" href="https://video-monitoring.com/beachcams/boyntoninlet/" target="_blank" rel="noopener">
+      <div>
+        <div class="cam-name">Boynton Inlet</div>
+        <div class="cam-desc">Centro da área · entrada de barcos</div>
+      </div>
+      <div class="chev">›</div>
+    </a>
+    <a class="cam-link" href="https://video-monitoring.com/beachcams/bocainlet/" target="_blank" rel="noopener">
+      <div>
+        <div class="cam-name">Boca Raton Inlet</div>
+        <div class="cam-desc">Sul da área · perto de Deerfield/Pompano</div>
+      </div>
+      <div class="chev">›</div>
+    </a>
+  </div>
+</div>
+
+<footer>
+  Dados de mar/vento: Open-Meteo Marine &amp; Weather API (modelo, não medição direta).<br>
+  Câmeras: Palm Beach County ERM (video-monitoring.com), serviço público oficial.<br>
+  Uso apenas para orientação — sempre confira o boletim marítimo oficial do NWS/Guarda Costeira antes de sair com o barco.
+</footer>
+
+<script>
+const LAT_MARINE = 26.45, LON_MARINE = -79.95;
+const LAT_WX = 26.45, LON_WX = -80.05;
+
+function degToCompass(deg){
+  const dirs = ["N","NE","E","SE","S","SO","O","NO"];
+  return dirs[Math.round(deg / 45) % 8];
+}
+
+function boatVerdict(waveFt, windKn, gustKn){
+  if(waveFt < 2 && gustKn < 15){
+    return {icon:"🚤", cls:"pill-good", title:"Bom para o barco", sub:"Mar calmo, vento fraco"};
+  } else if(waveFt < 4 && gustKn < 22){
+    return {icon:"⚠️", cls:"pill-warn", title:"Navegável, com atenção", sub:"Ondas/vento moderados"};
+  } else {
+    return {icon:"🌊", cls:"pill-bad", title:"Mar agitado", sub:"Cautela extra ou evite sair"};
+  }
+}
+
+function surfVerdict(swellFt, period){
+  if(swellFt >= 2 && period >= 8){
+    return {icon:"🏄", cls:"pill-good", title:"Boas ondas para surfar", sub:"Swell com energia"};
+  } else if(swellFt >= 1 && period >= 6){
+    return {icon:"🏄‍♂️", cls:"pill-warn", title:"Ondas fracas", sub:"Surfável, principalmente iniciante"};
+  } else {
+    return {icon:"💤", cls:"pill-bad", title:"Sem onda", sub:"Mar chapado para surf"};
+  }
+}
+
+async function loadConditions(){
+  const dataArea = document.getElementById('dataArea');
+  const updatedLabel = document.getElementById('updatedLabel');
+  updatedLabel.innerHTML = '<span class="spin"></span> atualizando…';
+  dataArea.innerHTML = '<div class="loading"><span class="spin"></span>&nbsp; Buscando condições…</div>';
+
+  const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${LAT_MARINE}&longitude=${LON_MARINE}&current=wave_height,wave_period,swell_wave_height,swell_wave_period,sea_surface_temperature&length_unit=imperial&temperature_unit=fahrenheit&timezone=America%2FNew_York`;
+  const wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LAT_WX}&longitude=${LON_WX}&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&temperature_unit=fahrenheit&timezone=America%2FNew_York`;
+
+  try{
+    const [marineRes, wxRes] = await Promise.all([fetch(marineUrl), fetch(wxUrl)]);
+    if(!marineRes.ok || !wxRes.ok) throw new Error('bad response');
+    const marine = await marineRes.json();
+    const wx = await wxRes.json();
+
+    const waveFt = marine.current.wave_height;
+    const wavePeriod = marine.current.wave_period;
+    const swellFt = marine.current.swell_wave_height;
+    const swellPeriod = marine.current.swell_wave_period;
+    const waterTemp = marine.current.sea_surface_temperature;
+
+    const windKn = wx.current.wind_speed_10m;
+    const gustKn = wx.current.wind_gusts_10m;
+    const windDir = wx.current.wind_direction_10m;
+    const airTemp = wx.current.temperature_2m;
+
+    const boat = boatVerdict(waveFt, windKn, gustKn);
+    const surf = surfVerdict(swellFt, swellPeriod);
+
+    dataArea.innerHTML = `
+      <div class="grid">
+        <div class="metric">
+          <div class="m-label">Ondas</div>
+          <div class="m-value">${waveFt.toFixed(1)} ft</div>
+          <div class="m-sub">período ${wavePeriod.toFixed(0)}s</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Swell</div>
+          <div class="m-value">${swellFt.toFixed(1)} ft</div>
+          <div class="m-sub">período ${swellPeriod.toFixed(0)}s</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Vento</div>
+          <div class="m-value">${windKn.toFixed(0)} kn</div>
+          <div class="m-sub">${degToCompass(windDir)} · rajadas ${gustKn.toFixed(0)} kn</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Água / Ar</div>
+          <div class="m-value">${waterTemp.toFixed(0)}°F</div>
+          <div class="m-sub">ar ${airTemp.toFixed(0)}°F</div>
+        </div>
+      </div>
+      <div class="verdicts">
+        <div class="verdict">
+          <div class="icon">${boat.icon}</div>
+          <div class="txt">
+            <div class="t-title ${boat.cls}">${boat.title}</div>
+            <div class="t-sub">${boat.sub}</div>
+          </div>
+        </div>
+        <div class="verdict">
+          <div class="icon">${surf.icon}</div>
+          <div class="txt">
+            <div class="t-title ${surf.cls}">${surf.title}</div>
+            <div class="t-sub">${surf.sub}</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', timeZone:'America/New_York'});
+    updatedLabel.textContent = `Atualizado às ${timeStr}`;
+  } catch(err){
+    dataArea.innerHTML = '<div class="error-box">Não foi possível carregar os dados agora. Verifique sua conexão e tente novamente, ou confira direto pelas câmeras abaixo.</div>';
+    updatedLabel.textContent = 'Falha ao atualizar';
+  }
+}
+
+loadConditions();
+</script>
+
+</body>
+</html>
