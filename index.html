@@ -178,9 +178,37 @@
     animation:sp 0.8s linear infinite;
   }
   @keyframes sp{ to{ transform:rotate(360deg); } }
+
+  .hurricane-alert[hidden]{ display:none; }
+  .hurricane-alert{
+    position:sticky;
+    top:0;
+    z-index:1000;
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    background:linear-gradient(135deg,#7a0d0d,#b3160f);
+    border:1px solid rgba(255,255,255,0.25);
+    border-radius:14px;
+    padding:14px 16px;
+    margin:0 0 16px 0;
+    box-shadow:0 8px 24px rgba(179,22,15,0.45);
+    animation:alertPulse 2s ease-in-out infinite;
+  }
+  .hurricane-alert .h-icon{ font-size:26px; line-height:1; }
+  .hurricane-alert .h-body{ flex:1; }
+  .hurricane-alert .h-title{ font-weight:700; font-size:15px; color:#fff; }
+  .hurricane-alert .h-sub{ font-size:12px; color:#ffe1de; margin-top:3px; line-height:1.4; }
+  .hurricane-alert .h-link{ display:inline-block; margin-top:6px; font-size:12px; color:#fff; text-decoration:underline; }
+  @keyframes alertPulse{
+    0%,100%{ box-shadow:0 8px 24px rgba(179,22,15,0.45); }
+    50%{ box-shadow:0 8px 32px rgba(255,60,50,0.7); }
+  }
 </style>
 </head>
 <body>
+
+<div id="hurricaneAlert" class="hurricane-alert" hidden></div>
 
 <header>
   <h1>🌊 Condições do Mar</h1>
@@ -190,7 +218,7 @@
 <div class="card">
   <div class="status-line">
     <span class="label" id="updatedLabel">carregando…</span>
-    <button id="refreshBtn" onclick="loadConditions()">↻ Atualizar</button>
+    <button id="refreshBtn" onclick="loadConditions(); loadHurricaneAlert();">↻ Atualizar</button>
   </div>
 
   <div id="dataArea">
@@ -339,7 +367,45 @@ async function loadConditions(){
   }
 }
 
+async function loadHurricaneAlert(){
+  const banner = document.getElementById('hurricaneAlert');
+  try{
+    const url = `https://api.weather.gov/alerts/active?point=${LAT_WX},${LON_WX}`;
+    const res = await fetch(url, { headers: { 'Accept': 'application/geo+json' } });
+    if(!res.ok) throw new Error('bad response');
+    const data = await res.json();
+
+    const watch = (data.features || []).find(f =>
+      (f.properties.event || '').toLowerCase().includes('hurricane watch')
+    );
+
+    if(watch){
+      const p = watch.properties;
+      const expires = p.expires ? new Date(p.expires).toLocaleString('pt-BR', {
+        day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', timeZone:'America/New_York'
+      }) : null;
+
+      banner.innerHTML = `
+        <div class="h-icon">🌀</div>
+        <div class="h-body">
+          <div class="h-title">${p.headline || 'Hurricane Watch em vigor'}</div>
+          <div class="h-sub">${p.areaDesc || ''}${expires ? ' · válido até ' + expires : ''}</div>
+          <a class="h-link" href="https://www.weather.gov/mfl" target="_blank" rel="noopener">Ver boletim oficial do NWS →</a>
+        </div>
+      `;
+      banner.hidden = false;
+    } else {
+      banner.hidden = true;
+      banner.innerHTML = '';
+    }
+  } catch(err){
+    // falha ao checar alerta não deve afetar o resto do app
+    banner.hidden = true;
+  }
+}
+
 loadConditions();
+loadHurricaneAlert();
 </script>
 
 </body>
