@@ -261,7 +261,7 @@
 </div>
 
 <footer>
-  Dados de mar/vento: Open-Meteo Marine &amp; Weather API (modelo, não medição direta).<br>
+  Dados de mar/vento: Open-Meteo Marine &amp; Weather API (modelo, não medição direta). Maré: NOAA Tides &amp; Currents, estação Lake Worth Pier.<br>
   Câmeras: Palm Beach County ERM e Jupiter Inlet District (video-monitoring.com), serviços públicos oficiais.<br>
   Uso apenas para orientação — sempre confira o boletim marítimo oficial do NWS/Guarda Costeira antes de sair com o barco.
 </footer>
@@ -269,6 +269,18 @@
 <script>
 const LAT_MARINE = 26.45, LON_MARINE = -79.95;
 const LAT_WX = 26.45, LON_WX = -80.05;
+const TIDE_STATION = '8722670'; // NOAA Lake Worth Pier, FL
+
+function nyDateStr(offsetDays){
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone:'America/New_York', year:'numeric', month:'2-digit', day:'2-digit'
+  }).formatToParts(d);
+  const map = {};
+  parts.forEach(p => map[p.type] = p.value);
+  return `${map.year}${map.month}${map.day}`;
+}
 
 function degToCompass(deg){
   const dirs = ["N","NE","E","SE","S","SO","O","NO"];
@@ -301,25 +313,32 @@ async function loadConditions(){
   updatedLabel.innerHTML = '<span class="spin"></span> atualizando…';
   dataArea.innerHTML = '<div class="loading"><span class="spin"></span>&nbsp; Buscando condições…</div>';
 
-  const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${LAT_MARINE}&longitude=${LON_MARINE}&current=wave_height,wave_period,swell_wave_height,swell_wave_period,sea_surface_temperature&length_unit=imperial&temperature_unit=fahrenheit&timezone=America%2FNew_York`;
-  const wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LAT_WX}&longitude=${LON_WX}&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&temperature_unit=fahrenheit&timezone=America%2FNew_York`;
+  const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${LAT_MARINE}&longitude=${LON_MARINE}&current=wave_height,wave_period,swell_wave_height,swell_wave_period&length_unit=imperial&timezone=America%2FNew_York`;
+  const wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LAT_WX}&longitude=${LON_WX}&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&timezone=America%2FNew_York`;
+  const tideUrl = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=${TIDE_STATION}&product=predictions&datum=MLLW&time_zone=lst_ldt&units=english&format=json&interval=hilo&begin_date=${nyDateStr(0)}&end_date=${nyDateStr(1)}`;
 
   try{
-    const [marineRes, wxRes] = await Promise.all([fetch(marineUrl), fetch(wxUrl)]);
-    if(!marineRes.ok || !wxRes.ok) throw new Error('bad response');
+    const [marineRes, wxRes, tideRes] = await Promise.all([fetch(marineUrl), fetch(wxUrl), fetch(tideUrl)]);
+    if(!marineRes.ok || !wxRes.ok || !tideRes.ok) throw new Error('bad response');
     const marine = await marineRes.json();
     const wx = await wxRes.json();
+    const tide = await tideRes.json();
 
     const waveFt = marine.current.wave_height;
     const wavePeriod = marine.current.wave_period;
     const swellFt = marine.current.swell_wave_height;
     const swellPeriod = marine.current.swell_wave_period;
-    const waterTemp = marine.current.sea_surface_temperature;
 
     const windKn = wx.current.wind_speed_10m;
     const gustKn = wx.current.wind_gusts_10m;
     const windDir = wx.current.wind_direction_10m;
-    const airTemp = wx.current.temperature_2m;
+
+    const predictions = tide.predictions || [];
+    const now = new Date();
+    const nextTide = predictions.find(p => new Date(p.t.replace(' ', 'T')) > now) || predictions[predictions.length - 1];
+    const tideRising = nextTide && nextTide.type === 'H';
+    const tideTimeStr = nextTide ? nextTide.t.slice(11, 16) : '--:--';
+    const tideHeight = nextTide ? Number(nextTide.v).toFixed(1) : '-';
 
     const boat = boatVerdict(waveFt, windKn, gustKn);
     const surf = surfVerdict(swellFt, swellPeriod);
@@ -342,9 +361,9 @@ async function loadConditions(){
           <div class="m-sub">${degToCompass(windDir)} · rajadas ${gustKn.toFixed(0)} kn</div>
         </div>
         <div class="metric">
-          <div class="m-label">Água / Ar</div>
-          <div class="m-value">${waterTemp.toFixed(0)}°F</div>
-          <div class="m-sub">ar ${airTemp.toFixed(0)}°F</div>
+          <div class="m-label">Maré</div>
+          <div class="m-value">${tideRising ? '⬆️ Subindo' : '⬇️ Descendo'}</div>
+          <div class="m-sub">${tideRising ? 'alta' : 'baixa'} ${tideTimeStr} · ${tideHeight} ft</div>
         </div>
       </div>
       <div class="verdicts">
@@ -365,8 +384,7 @@ async function loadConditions(){
       </div>
     `;
 
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', timeZone:'America/New_York'});
+    const timeStr = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', timeZone:'America/New_York'});
     updatedLabel.textContent = `Atualizado às ${timeStr}`;
   } catch(err){
     dataArea.innerHTML = '<div class="error-box">Não foi possível carregar os dados agora. Verifique sua conexão e tente novamente, ou confira direto pelas câmeras abaixo.</div>';
