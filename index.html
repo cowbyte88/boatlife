@@ -204,6 +204,45 @@
     0%,100%{ box-shadow:0 8px 24px rgba(179,22,15,0.45); }
     50%{ box-shadow:0 8px 32px rgba(255,60,50,0.7); }
   }
+
+  .tabs{
+    display:flex;
+    gap:8px;
+    margin-bottom:16px;
+  }
+  .tab-btn{
+    flex:1;
+    background:rgba(255,255,255,0.05);
+    border:1px solid var(--card-border);
+    color:var(--text-dim);
+    border-radius:12px;
+    padding:10px;
+    font-size:14px;
+    font-weight:600;
+  }
+  .tab-btn.active{
+    background:var(--card);
+    color:var(--text);
+    border-color:var(--accent);
+  }
+  .tab-panel[hidden]{ display:none; }
+
+  .traffic-leg{
+    background:rgba(255,255,255,0.04);
+    border-radius:12px;
+    padding:14px;
+    margin-bottom:10px;
+  }
+  .traffic-leg .tl-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .traffic-leg .tl-label{ font-size:13px; font-weight:600; }
+  .traffic-leg .tl-dot{ font-size:14px; }
+  .traffic-leg .tl-time{ font-size:22px; font-weight:600; margin-top:6px; }
+  .traffic-leg .tl-sub{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .traffic-leg .tl-incident{ font-size:12px; color:var(--warn); margin-top:6px; }
 </style>
 </head>
 <body>
@@ -211,60 +250,85 @@
 <div id="hurricaneAlert" class="hurricane-alert" hidden></div>
 
 <header>
-  <h1>🌊 Condições do Mar</h1>
-  <p>Palm Beach → Pompano Beach, FL</p>
+  <h1 id="pageTitle">🌊 Condições do Mar</h1>
+  <p id="pageSubtitle">Palm Beach → Pompano Beach, FL</p>
 </header>
 
-<div class="card">
-  <div class="status-line">
-    <span class="label" id="updatedLabel">carregando…</span>
-    <button id="refreshBtn" onclick="loadConditions(); loadHurricaneAlert();">↻ Atualizar</button>
-  </div>
-
-  <div id="dataArea">
-    <div class="loading"><span class="spin"></span>&nbsp; Buscando condições…</div>
-  </div>
+<div class="tabs">
+  <button class="tab-btn active" id="tabBtnMar" onclick="switchTab('mar')">🌊 Mar</button>
+  <button class="tab-btn" id="tabBtnTransito" onclick="switchTab('transito')">🚦 Trânsito</button>
 </div>
 
-<div class="section-title">📷 Câmeras ao vivo</div>
-<div class="card">
-  <div class="cam-list">
-    <a class="cam-link" href="https://video-monitoring.com/beachcams/lakeworthinlet/" target="_blank" rel="noopener">
-      <div>
-        <div class="cam-name">Lake Worth Inlet</div>
-        <div class="cam-desc">Norte da área · próximo a Palm Beach</div>
-      </div>
-      <div class="chev">›</div>
-    </a>
-    <a class="cam-link" href="https://video-monitoring.com/beachcams/boyntoninlet/" target="_blank" rel="noopener">
-      <div>
-        <div class="cam-name">Boynton Inlet</div>
-        <div class="cam-desc">Centro da área · entrada de barcos</div>
-      </div>
-      <div class="chev">›</div>
-    </a>
-    <a class="cam-link" href="https://video-monitoring.com/beachcams/bocainlet/" target="_blank" rel="noopener">
-      <div>
-        <div class="cam-name">Boca Raton Inlet</div>
-        <div class="cam-desc">Sul da área · perto de Deerfield/Pompano</div>
-      </div>
-      <div class="chev">›</div>
-    </a>
-    <a class="cam-link" href="https://video-monitoring.com/beachcams/jupiter/" target="_blank" rel="noopener">
-      <div>
-        <div class="cam-name">Jupiter Inlet</div>
-        <div class="cam-desc">Extremo norte · acima de Palm Beach</div>
-      </div>
-      <div class="chev">›</div>
-    </a>
+<div id="panelMar" class="tab-panel">
+  <div class="card">
+    <div class="status-line">
+      <span class="label" id="updatedLabel">carregando…</span>
+      <button id="refreshBtn" onclick="loadConditions(); loadHurricaneAlert();">↻ Atualizar</button>
+    </div>
+
+    <div id="dataArea">
+      <div class="loading"><span class="spin"></span>&nbsp; Buscando condições…</div>
+    </div>
   </div>
+
+  <div class="section-title">📷 Câmeras ao vivo</div>
+  <div class="card">
+    <div class="cam-list">
+      <a class="cam-link" href="https://video-monitoring.com/beachcams/lakeworthinlet/" target="_blank" rel="noopener">
+        <div>
+          <div class="cam-name">Lake Worth Inlet</div>
+          <div class="cam-desc">Norte da área · próximo a Palm Beach</div>
+        </div>
+        <div class="chev">›</div>
+      </a>
+      <a class="cam-link" href="https://video-monitoring.com/beachcams/boyntoninlet/" target="_blank" rel="noopener">
+        <div>
+          <div class="cam-name">Boynton Inlet</div>
+          <div class="cam-desc">Centro da área · entrada de barcos</div>
+        </div>
+        <div class="chev">›</div>
+      </a>
+      <a class="cam-link" href="https://video-monitoring.com/beachcams/bocainlet/" target="_blank" rel="noopener">
+        <div>
+          <div class="cam-name">Boca Raton Inlet</div>
+          <div class="cam-desc">Sul da área · perto de Deerfield/Pompano</div>
+        </div>
+        <div class="chev">›</div>
+      </a>
+      <a class="cam-link" href="https://video-monitoring.com/beachcams/jupiter/" target="_blank" rel="noopener">
+        <div>
+          <div class="cam-name">Jupiter Inlet</div>
+          <div class="cam-desc">Extremo norte · acima de Palm Beach</div>
+        </div>
+        <div class="chev">›</div>
+      </a>
+    </div>
+  </div>
+
+  <footer>
+    Dados de mar/vento: Open-Meteo Marine &amp; Weather API (modelo, não medição direta). Maré: NOAA Tides &amp; Currents, estação Lake Worth Pier.<br>
+    Câmeras: Palm Beach County ERM e Jupiter Inlet District (video-monitoring.com), serviços públicos oficiais.<br>
+    Uso apenas para orientação — sempre confira o boletim marítimo oficial do NWS/Guarda Costeira antes de sair com o barco.
+  </footer>
 </div>
 
-<footer>
-  Dados de mar/vento: Open-Meteo Marine &amp; Weather API (modelo, não medição direta). Maré: NOAA Tides &amp; Currents, estação Lake Worth Pier.<br>
-  Câmeras: Palm Beach County ERM e Jupiter Inlet District (video-monitoring.com), serviços públicos oficiais.<br>
-  Uso apenas para orientação — sempre confira o boletim marítimo oficial do NWS/Guarda Costeira antes de sair com o barco.
-</footer>
+<div id="panelTransito" class="tab-panel" hidden>
+  <div class="card">
+    <div class="status-line">
+      <span class="label" id="trafficUpdatedLabel">toque para carregar</span>
+      <button id="trafficRefreshBtn" onclick="loadTraffic()">↻ Atualizar</button>
+    </div>
+
+    <div id="trafficArea">
+      <div class="loading">Toque em Atualizar para ver o trânsito na I-95.</div>
+    </div>
+  </div>
+
+  <footer>
+    Trânsito: TomTom Routing &amp; Traffic API, via backend próprio (car-traffic-alert). Rotas fixas a partir de Hypoluxo Island.<br>
+    Atualiza somente quando você abre esta aba ou aperta Atualizar — sem notificações automáticas.
+  </footer>
+</div>
 
 <script>
 const LAT_MARINE = 26.45, LON_MARINE = -79.95;
@@ -426,6 +490,69 @@ async function loadHurricaneAlert(){
   } catch(err){
     // falha ao checar alerta não deve afetar o resto do app
     banner.hidden = true;
+  }
+}
+
+const TRAFFIC_STATUS_URL = 'https://car-traffic-alert.vercel.app/api/status';
+let trafficLoadedOnce = false;
+
+function switchTab(tab){
+  const isMar = tab === 'mar';
+  document.getElementById('panelMar').hidden = !isMar;
+  document.getElementById('panelTransito').hidden = isMar;
+  document.getElementById('tabBtnMar').classList.toggle('active', isMar);
+  document.getElementById('tabBtnTransito').classList.toggle('active', !isMar);
+
+  if(!isMar && !trafficLoadedOnce){
+    trafficLoadedOnce = true;
+    loadTraffic();
+  }
+}
+
+function trafficDot(severity){
+  return severity === 'bad' ? '🔴' : severity === 'warn' ? '🟡' : '🟢';
+}
+
+function trafficLegHtml(leg){
+  const incidentsHtml = (leg.incidents || [])
+    .map(i => `<div class="tl-incident">⚠️ ${i}</div>`)
+    .join('');
+  const heavyHtml = (leg.heavyTraffic && leg.incidents.length === 0)
+    ? '<div class="tl-incident">⚠️ Trânsito pesado no trajeto</div>'
+    : '';
+
+  return `
+    <div class="traffic-leg">
+      <div class="tl-head">
+        <div class="tl-label">${leg.label}</div>
+        <div class="tl-dot">${trafficDot(leg.severity)}</div>
+      </div>
+      <div class="tl-time">${leg.trafficMin} min</div>
+      <div class="tl-sub">normal ${leg.noTrafficMin} min · atraso ${leg.delayMin} min</div>
+      ${incidentsHtml}${heavyHtml}
+    </div>
+  `;
+}
+
+async function loadTraffic(){
+  const area = document.getElementById('trafficArea');
+  const label = document.getElementById('trafficUpdatedLabel');
+  label.innerHTML = '<span class="spin"></span> atualizando…';
+  area.innerHTML = '<div class="loading"><span class="spin"></span>&nbsp; Buscando trânsito…</div>';
+
+  try{
+    const res = await fetch(TRAFFIC_STATUS_URL);
+    if(!res.ok) throw new Error('bad response');
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+
+    area.innerHTML = trafficLegHtml(data.south) + trafficLegHtml(data.north);
+
+    const timeStr = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', timeZone:'America/New_York'});
+    label.textContent = `Atualizado às ${timeStr}`;
+  } catch(err){
+    area.innerHTML = '<div class="error-box">Não foi possível carregar o trânsito agora. Tente novamente em instantes.</div>';
+    label.textContent = 'Falha ao atualizar';
   }
 }
 
